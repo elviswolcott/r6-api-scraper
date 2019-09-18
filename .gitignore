@@ -10,6 +10,7 @@ dist
 build
 # generated assets
 website/static/img/assets
+manifest.json
 docs/auto
 # account information
 .env

@@ -132,31 +132,10 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
 
   await browser.close();
 
-  // setup a directory for unorganized files
-  const downloads = `./downloads/${version}`;
-  try {
-    fs.mkdirSync("./downloads");
-  } catch (e) {
-    // not the first scrape, make sure nothing exists for this version
-    fs.removeSync(`${downloads}`);
-  }
-  fs.mkdirSync(`${downloads}`);
-  // download the manifests
-  await Promise.all(manifests.map(download(downloads)));
-
-  // there should be operators, ranks, seasons, weapons, and locale manifests
-  const manifestPaths = manifests.reduce((paths, file) => {
-    file = cleanUrl(file);
-    const manifest = file.match(
-      /___([a-z]+).(?:[a-z-]+.)?(?:[a-z0-9]+).([a-z]+)$/
-    )[1];
-    paths[manifest] = `${downloads}/${file}`;
-    return paths;
-  }, {});
-
   // load in the manifests
-  const manifestContent = mapObject(manifestPaths, path => {
-    return JSON.parse(fs.readFileSync(path, "utf-8"));
+  const manifestContent = await reduceToObjectAsync(manifests, async (path) => {
+    const u = path.split('/');
+    return [u[u.length-1].split('.')[0], await fetch(path).then(res => res.json())];
   });
 
   // localize
@@ -186,6 +165,7 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
       category,
       name,
       id,
+      index,
       ctu: unit,
       uniqueStatistic: {
         pvp: { statisticId: statId, label: statLabel }
@@ -194,6 +174,7 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
       badge,
       figure: { large, small }
     } = op;
+    const [unitOrder, unitId] = index.split(":").map(hex);
     // add the assets to the download list
     toDownload.push({
       url: large,
@@ -215,8 +196,10 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
       category: category === "atk" ? "attack" : "defend",
       name,
       unit,
-      statId,
+      statId: statId.split(':')[0],
       statLabel,
+      unitId,
+      unitOrder,
       small: `operators/${op.id}/small.png`,
       large: `operators/${op.id}/large.png`,
       mask: `operators/${op.id}/mask.png`,
@@ -695,11 +678,10 @@ const limit = (str, n) => {
   return str.length > n ? str.slice(0, n - 4) + "..." : str;
 };
 
-// keep a value in a closure
-const keepLast = f => {
-  let last;
-  return f;
-};
+// parse int as hex
+const hex = i => {
+  return parseInt(i, 16);
+}
 
 // replace all instances of a substring
 const replace = (str, match, replace = "") => {
@@ -716,6 +698,15 @@ const mapObject = (obj, f) => {
   let r = {};
   for (const key in obj) {
     const val = f(obj[key], key);
+    val && (r[key] = val);
+  }
+  return r;
+};
+
+const reduceToObjectAsync = async (arr, f) => {
+  let r = {};
+  for (const el of arr) {
+    const [key,val] = await f(el);
     val && (r[key] = val);
   }
   return r;
