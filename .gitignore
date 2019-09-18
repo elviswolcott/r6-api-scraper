@@ -1,0 +1,15 @@
+# node modules
+node_modules
+# temp directory for build
+downloads
+# build logs
+log
+# package contents
+dist
+# site
+build
+# generated assets
+website/static/img/assets
+docs/auto
+# account information
+.env

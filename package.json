@@ -1,0 +1,24 @@
+{
+  "name": "r6-scraper",
+  "version": "1.0.0",
+  "description": "pulls assets for Rainbow Six Siege",
+  "main": "build.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "prettier build.js --write",
+    "scrape": "npm cache clean --force && node build.js"
+  },
+  "author": "Elvis Wolcott",
+  "license": "ISC",
+  "dependencies": {
+    "ascii-table": "0.0.9",
+    "dotenv": "^8.1.0",
+    "fs-extra": "^8.1.0",
+    "markdown-table": "^1.1.3",
+    "node-fetch": "^2.6.0",
+    "puppeteer": "^1.19.0"
+  },
+  "devDependencies": {
+    "prettier": "^1.18.2"
+  }
+}

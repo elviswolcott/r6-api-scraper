@@ -1,0 +1,10 @@
+{
+  "Manifest": {
+    "Manifest": ["manifest"],
+    "Explore": ["auto/operators", "auto/seasons", "auto/divisions", "auto/ranks"]
+
+  },
+  "API": {
+    "API Format": ["auto/requests"]
+  }
+}
