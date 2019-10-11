@@ -9,6 +9,8 @@ const MarkdownTable = require("markdown-table");
 const SEARCH_TERM = "SEARCH";
 const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
 
+const DEBUG = true;
+
 (async () => {
   // scraped information
   let manifests = [];
@@ -19,7 +21,7 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
   fs.removeSync("./log");
   fs.mkdirSync("./log");
 
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ headless: !DEBUG });
   const page = await browser.newPage();
   page.setRequestInterception(true);
   page.on("response", async response => {
@@ -133,9 +135,12 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
   await browser.close();
 
   // load in the manifests
-  const manifestContent = await reduceToObjectAsync(manifests, async (path) => {
-    const u = path.split('/');
-    return [u[u.length-1].split('.')[0], await fetch(path).then(res => res.json())];
+  const manifestContent = await reduceToObjectAsync(manifests, async path => {
+    const u = path.split("/");
+    return [
+      u[u.length - 1].split(".")[0],
+      await fetch(path).then(res => res.json())
+    ];
   });
 
   // localize
@@ -178,32 +183,32 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
     // add the assets to the download list
     toDownload.push({
       url: large,
-      local: `operators/${op.id}/large.png`
+      local: `/operators/${op.id}/large.png`
     });
     toDownload.push({
       url: small,
-      local: `operators/${op.id}/small.png`
+      local: `/operators/${op.id}/small.png`
     });
     toDownload.push({
       url: mask,
-      local: `operators/${op.id}/mask.png`
+      local: `/operators/${op.id}/mask.png`
     });
     toDownload.push({
       url: badge,
-      local: `operators/${op.id}/icon.png`
+      local: `/operators/${op.id}/icon.png`
     });
     return {
       category: category === "atk" ? "attack" : "defend",
       name,
       unit,
-      statId: statId.split(':')[0],
+      statId: statId.split(":")[0],
       statLabel,
       unitId,
       unitOrder,
-      small: `operators/${op.id}/small.png`,
-      large: `operators/${op.id}/large.png`,
-      mask: `operators/${op.id}/mask.png`,
-      icon: `operators/${op.id}/icon.png`
+      small: `/operators/${op.id}/small.png`,
+      large: `/operators/${op.id}/large.png`,
+      mask: `/operators/${op.id}/mask.png`,
+      icon: `/operators/${op.id}/icon.png`
     };
   });
   // get seasons
@@ -215,11 +220,11 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
     mapObject(localized.seasons.seasons, (season, id) => {
       toDownload.push({
         url: season.background,
-        local: `seasons/s${id}/background.jpg`
+        local: `/seasons/s${id}/background.jpg`
       });
       return {
         name: season.name,
-        background: `seasons/s${id}/background.jpg`
+        background: `/seasons/s${id}/background.jpg`
       };
     }),
     id => `s${id}`
@@ -247,7 +252,7 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
       let { name, range, images } = rank;
       toDownload.push({
         url: images.hd || images.default,
-        local: `seasons/s${season.id}/ranks/r${id}/icon.svg`
+        local: `/seasons/s${season.id}/ranks/r${id}/icon.svg`
       });
       range = range || { "0": 0, "1": 0 };
       const { "0": min, "1": max } = range;
@@ -255,7 +260,7 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
         name,
         min,
         max,
-        icon: `seasons/s${season.id}/ranks/r${id}/icon.svg`
+        icon: `/seasons/s${season.id}/ranks/r${id}/icon.svg`
       };
     }
   }
@@ -277,7 +282,7 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
   );
   console.log(`Downloaded ${toDownload.length} items.`);
 
-  fs.mkdirpSync('./docs/auto');
+  fs.mkdirpSync("./docs/auto");
 
   // auto gen docs for the manifest
   // operators
@@ -333,10 +338,7 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
           const season = id.match(/s([0-9]+)-/)[1];
           const prefix =
             index === 0 ||
-            season !=
-              manifest.allDivisions[index - 1].match(
-                /s([0-9]+)-/
-              )[1]
+            season != manifest.allDivisions[index - 1].match(/s([0-9]+)-/)[1]
               ? [`## Season ${season}`]
               : [];
           return prefix
@@ -356,15 +358,12 @@ const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
     [
       "---\nid: ranks\ntitle: Ranks\nsidebar_label: Ranks\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allRanks
-        .map( (id, index) => {
+        .map((id, index) => {
           const rank = manifest.ranks[id];
           const season = id.match(/s([0-9]+)-/)[1];
           const prefix =
             index === 0 ||
-            season !=
-              manifest.allRanks[index - 1].match(
-                /s([0-9]+)-/
-              )[1]
+            season != manifest.allRanks[index - 1].match(/s([0-9]+)-/)[1]
               ? [`## Season ${season}`]
               : [];
           return prefix
@@ -681,7 +680,7 @@ const limit = (str, n) => {
 // parse int as hex
 const hex = i => {
   return parseInt(i, 16);
-}
+};
 
 // replace all instances of a substring
 const replace = (str, match, replace = "") => {
@@ -706,7 +705,7 @@ const mapObject = (obj, f) => {
 const reduceToObjectAsync = async (arr, f) => {
   let r = {};
   for (const el of arr) {
-    const [key,val] = await f(el);
+    const [key, val] = await f(el);
     val && (r[key] = val);
   }
   return r;
@@ -749,71 +748,3 @@ const waitFor = async (page, condition) => {
     });
   };
 };
-
-/* final result:
- *
- * manifests.json: a consolidated manifest file
- * to order operators reverse the index, remove : and read as hex, then sort
- * sX-(d|r)Y format for season, division and rank identifiers
- * schema:
- * {
- *    allOperators: string[],
- *    attackers: string[],
- *    defenders: string[],
- *    operators: {
- *      [operatorId: string]: {
- *        category: attack|defend,
- *        name: string,
- *        unit: string,
- *        statId: string,
- *        statLabel: string,
- *      }
- *    },
- *    allSeasons: string[],
- *    currentSeason: string,
- *    seasons: {
- *      [season: string]: {
- *        name: string,
- *        divisions: string[]
- *      }
- *    },
- *    divisions: {
- *      [division: string]: {
- *        name: string,
- *        ranks: string[]
- *      }
- *    },
- *    ranks: {
- *      [rank: string]: {
- *        name: string,
- *        min: number,
- *        max: number,
- *      }
- *    }
- * }
- *
- * api report format
- * API Format
- * ------------------------------------
- * List of requests
- * ------------------------------------
- * Table for requests broken (detailed)
- * ------------------------------------
- * (for each request)
- * Table with request info
- *
- *
- * file structure
- * manifest.json
- * api
- * operators/{id}
- *    -large.png
- *    -small.png
- *    -mask.png
- *    -badge.png
- * seasons/{id}
- *    -background.jpg
- *    -/ranks/${id}
- *        -icon.svg
- *
- */
