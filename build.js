@@ -159,10 +159,10 @@ const DEBUG = true;
   manifest.allOperators = inDisplayOrder.map(op => op.id);
   // filter to get attackers and defenders
   manifest.attackers = inDisplayOrder
-    .filter(op => op.category === "atk")
+    .filter(op => op.category === "attacker")
     .map(op => op.id);
   manifest.defenders = inDisplayOrder
-    .filter(op => op.category === "def")
+    .filter(op => op.category === "defender")
     .map(op => op.id);
   // trim unwanted fields on operators
   manifest.operators = mapObject(localized.operators, op => {
@@ -565,32 +565,6 @@ const addApiResponse = async o => {
     response,
     responseHeaders
   };
-};
-
-// download and save the content of a url
-const download = downloads => async url => {
-  const res = await fetch(url);
-  const name = cleanUrl(url);
-  const file = fs.createWriteStream(`${downloads}/${name}`);
-  return new Promise((resolve, reject) => {
-    res.body.pipe(file);
-    // add a timeout
-    const timeout = setTimeout(() => {
-      console.log(`Attempt to download ${url} timed out after 10s.`);
-      reject();
-    }, 1e4);
-    res.body.on("error", err => {
-      console.error(err);
-      console.log(`Unable to download ${url}.`);
-      clearTimeout(timeout);
-      reject();
-    });
-    file.on("finish", () => {
-      console.log(`Finished downloading ${url}.`);
-      clearTimeout(timeout);
-      resolve();
-    });
-  });
 };
 
 const batch = async (arr, f, n) => {
