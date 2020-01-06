@@ -21,7 +21,10 @@ const DEBUG = true;
   fs.removeSync("./log");
   fs.mkdirSync("./log");
 
-  const browser = await puppeteer.launch({ headless: !DEBUG });
+  const browser = await puppeteer.launch({ headless: !DEBUG, args: [
+    '--disable-web-security',
+    '--disable-features=IsolateOrigins,site-per-process'
+  ] });
   const page = await browser.newPage();
   page.setRequestInterception(true);
   page.on("response", async response => {
@@ -38,9 +41,9 @@ const DEBUG = true;
         url,
         headers: mapObject(request.headers(), (value, header) =>
           header === "authorization"
-            ? ( header.startsWith("Basic")
-                ? value.replace(/=([A-Za-z0-9-._]+)/, "={AUTH_TOKEN}")
-                : "Basic {AUTH_TOKEN}")
+            ? header.startsWith("Basic")
+              ? value.replace(/=([A-Za-z0-9-._]+)/, "={AUTH_TOKEN}")
+              : "Basic {AUTH_TOKEN}"
             : value
         ),
         response: json,
@@ -97,8 +100,10 @@ const DEBUG = true;
 
   const embedded_frames = await page.frames();
   const login_frame = embedded_frames.filter(frame =>
-    frame.url().startsWith("https://connect.ubi.com/?")
+    frame.url().startsWith("https://connect.ubisoft.com/login")
   )[0];
+
+  embedded_frames.forEach(frame => console.log(frame.url()))
 
   // login
   await login_frame.evaluate(
@@ -459,7 +464,7 @@ const DEBUG = true;
               return query;
             }, {})
           : undefined,
-        headers: { ...headers, authorization: "Basic {Token}"},
+        headers: { ...headers, authorization: "Basic {Token}" },
         response,
         responseHeaders
       };
@@ -693,8 +698,9 @@ const operatorLayouts = {
     const getStat = s => {
       return parseInt(
         Array.from(
-          Array.from(document.querySelectorAll('.ratings li')).filter(el => el.innerText.toLowerCase().trim() === s)
-          [0].querySelector('span').classList
+          Array.from(document.querySelectorAll(".ratings li"))
+            .filter(el => el.innerText.toLowerCase().trim() === s)[0]
+            .querySelector("span").classList
         )
           .filter(c => c.startsWith("rating-rank-"))[0]
           .replace("rating-rank-", "")
@@ -874,7 +880,7 @@ const determineOperatorLayout = () => {
     return 4;
   } else if (document.getElementsByClassName("operator-bio-desc").length > 0) {
     return 3;
-  } else if (document.getElementsByClassName('op-rating-armor').length > 0) {
+  } else if (document.getElementsByClassName("op-rating-armor").length > 0) {
     return 5;
   } else {
     return 0; // unknown layout
