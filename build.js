@@ -38,7 +38,9 @@ const DEBUG = true;
         url,
         headers: mapObject(request.headers(), (value, header) =>
           header === "authorization"
-            ? value.replace(/=([A-Za-z0-9-._]+)/, "={AUTH_TOKEN}")
+            ? ( header.startsWith("Basic")
+                ? value.replace(/=([A-Za-z0-9-._]+)/, "={AUTH_TOKEN}")
+                : "Basic {AUTH_TOKEN}")
             : value
         ),
         response: json,
@@ -132,8 +134,6 @@ const DEBUG = true;
   // wait for the request to get through
   await sleep(5e3);
 
-  await browser.close();
-
   // load in the manifests
   const manifestContent = await reduceToObjectAsync(manifests, async path => {
     const u = path.split("/");
@@ -151,6 +151,55 @@ const DEBUG = true;
 
   // combine the localized manifests into the final manifest file
   let manifest = {};
+  // lookup id by name (needed for when scraping gets messier)
+  let nameToId = {};
+  for (const key in localized.operators) {
+    nameToId[localized.operators[key].name.toLowerCase()] = key;
+  }
+
+  // for scraping rainbow6.ubisoft.com it's a bit more complex, there's no JSON files to work with
+  // and different pages follow different formats
+
+  // start with Ash as a known operator
+  await page.goto(
+    "https://rainbow6.ubisoft.com/siege/en-us/game-info/operators/ash/index.aspx"
+  );
+
+  // get a list of more urls from the bottom nav
+  const operatorsPages = await page.evaluate(() => {
+    const operators = Array.from(
+      document.querySelectorAll(
+        ".operator-browser .operator-section-content li a"
+      )
+    );
+    return operators.map(el => el.href);
+  });
+
+  // **/index_old redirects to **/index, but the _old tells us a bit about the page layout
+  // There are 3 different layouts
+  // Type 1: role, flag, name, icon, unit, armor, speed, difficulty, video, weapons, bio info, (sometimes tips & interactions)
+  // Type 2: flag, name, icon, unit, armor, speed, bio, gadget
+  // Type 3: Type 1
+  // Type 4: Type 3 but with sliders for loadout
+
+  const extraOperatorInfo = await reduceToObjectAsync(
+    operatorsPages,
+    async url => {
+      await page.goto(url);
+
+      console.log(url);
+      console.log(await page.evaluate(determineOperatorLayout));
+
+      return await page.evaluate(
+        operatorLayouts[await page.evaluate(determineOperatorLayout)],
+        nameToId
+      );
+    }
+  );
+
+  fs.writeFileSync("./temp", JSON.stringify(extraOperatorInfo));
+  await browser.close();
+
   // get operators as array
   const inDisplayOrder = unKey(localized.operators).sort(
     (op1, op2) => getDisplayPosition(op1) - getDisplayPosition(op2)
@@ -169,7 +218,6 @@ const DEBUG = true;
     const {
       category,
       name,
-      id,
       index,
       ctu: unit,
       uniqueStatistic: {
@@ -411,7 +459,7 @@ const DEBUG = true;
               return query;
             }, {})
           : undefined,
-        headers,
+        headers: { ...headers, authorization: "Basic {Token}"},
         response,
         responseHeaders
       };
@@ -529,6 +577,310 @@ process.on("unhandledRejection", e => {
   process.exit(1);
 });
 
+// functions extract operator information from a page
+const operatorLayouts = {
+  0: () => {},
+  1: nameToId => {
+    const getStat = s => {
+      return parseInt(
+        Array.from(
+          document.getElementsByClassName(`op-rating ${s}`)[0].classList
+        )
+          .filter(c => c.startsWith("rating-rank-"))[0]
+          .replace("rating-rank-", "")
+      );
+    };
+
+    const name = document.getElementsByClassName("op-name")[0].innerText;
+    const id = nameToId[name.toLowerCase()];
+    const roles = document
+      .getElementsByClassName("op-role")[0]
+      .innerText.split(",")
+      .map(s => s.trim());
+    const armor = getStat("armor");
+    const speed = getStat("speed");
+    const difficulty = getStat("difficulty");
+    const brief = document.getElementsByClassName("intro")[0].innerText;
+    const loadout = Array.from(
+      document.getElementsByClassName("op-loadout-section")
+    )
+      .map(section => {
+        return {
+          [section.getElementsByTagName("h3")[0].innerText]: Array.from(
+            section.querySelectorAll(".item:not(.slick-cloned)")
+          ).map(item => {
+            return {
+              name: item.querySelector(".op-weapon-name").innerText,
+              image: item.querySelector("img").src,
+              type: item.querySelector(".op-weapon-type").innerText || undefined
+            };
+          })
+        };
+      })
+      .reduce((a, b) => Object.assign(a, b), {});
+    document.getElementById("tab-op-identity").click();
+    const bio = Array.from(document.querySelectorAll(".operator-bio-detail li"))
+      .map(el => {
+        return {
+          [el.innerText.split(":")[0].toUpperCase()]: el.querySelector("span")
+            .innerText
+        };
+      })
+      .concat([
+        {
+          BACKGROUND: document
+            .querySelector(".operator-bio-desc")
+            .innerText.replace(
+              document.querySelector(".operator-bio-desc strong").innerText,
+              ""
+            )
+            .trim()
+        }
+      ])
+      .reduce((a, b) => Object.assign(a, b), {});
+    return [
+      id,
+      {
+        roles,
+        armor,
+        speed,
+        difficulty,
+        brief,
+        loadout,
+        bio
+      }
+    ];
+  },
+  2: nameToId => {
+    const getStat = s => {
+      return parseInt(
+        Array.from(document.querySelector(`.op-rating-${s}`).classList)
+          .filter(c => c.startsWith("rating-rank-"))[0]
+          .replace("rating-rank-", "")
+      );
+    };
+
+    const name = document.querySelector(".operator-overview-side h3").innerText;
+    const id = nameToId[name.toLowerCase()];
+    const armor = getStat("armor");
+    const speed = getStat("speed");
+    const ability = document.querySelector(".operator-gadget span").innerText;
+
+    const bio = Array.from(document.querySelectorAll(".operator-bio li"))
+      .map(el => {
+        return {
+          [el.innerText.split(":")[0]]: el.querySelector("span").innerText
+        };
+      })
+      .concat([
+        {
+          BACKGROUND: document.querySelector(".operator-bio p").innerText.trim()
+        }
+      ])
+      .reduce((a, b) => Object.assign(a, b), {});
+
+    return [
+      id,
+      {
+        armor,
+        speed,
+        bio,
+        ability
+      }
+    ];
+  },
+  3: nameToId => {
+    const getStat = s => {
+      return parseInt(
+        Array.from(
+          Array.from(document.querySelectorAll('.ratings li')).filter(el => el.innerText.toLowerCase().trim() === s)
+          [0].querySelector('span').classList
+        )
+          .filter(c => c.startsWith("rating-rank-"))[0]
+          .replace("rating-rank-", "")
+      );
+    };
+
+    const name = document.querySelector(".operator-overview-side h3").innerText;
+    const id = nameToId[name.toLowerCase()];
+    const armor = getStat("armor");
+    const speed = getStat("speed");
+    const ability = document
+      .querySelector(".operator-gadget h5")
+      .innerText.replace(
+        document.querySelector(".operator-gadget h5 span").innerText,
+        ""
+      )
+      .trim();
+    const brief = document.getElementsByClassName("intro")[0].innerText;
+    const loadout = Array.from(
+      document.getElementsByClassName("operator_loadout_primary")
+    )
+      .map(section => {
+        return {
+          [section.getElementsByTagName("h3")[0].innerText]: Array.from(
+            section.querySelectorAll("li")
+          ).map(item => {
+            return {
+              name: item.querySelector("span").innerText,
+              image: item.querySelector("img").src
+            };
+          })
+        };
+      })
+      .reduce((a, b) => Object.assign(a, b), {});
+    const bio = document
+      .querySelector(".operator-bio-desc")
+      .innerText.split("\n")
+      .filter(l => l !== "")
+      .reduce(
+        (joined, current) => {
+          if (current === current.toUpperCase()) {
+            joined[1] = current;
+          } else {
+            joined[0][joined[1]] = current;
+          }
+          return joined;
+        },
+        [{}, "QUOTE"]
+      )[0];
+    return [
+      id,
+      {
+        armor,
+        speed,
+        ability,
+        brief,
+        loadout,
+        bio
+      }
+    ];
+  },
+  4: nameToId => {
+    const getStat = s => {
+      return parseInt(
+        Array.from(
+          document.getElementsByClassName(`op-rating ${s}`)[0].classList
+        )
+          .filter(c => c.startsWith("rating-rank-"))[0]
+          .replace("rating-rank-", "")
+      );
+    };
+
+    const name = document.querySelector(".op-name").innerText;
+    const id = nameToId[name.toLowerCase()];
+    const roles = document
+      .getElementsByClassName("op-role")[0]
+      .innerText.split(",")
+      .map(s => s.trim());
+    const armor = getStat("armor");
+    const speed = getStat("speed");
+    const brief = document.getElementsByClassName("intro")[0].innerText;
+    const loadout = Array.from(
+      document.getElementsByClassName("op-loadout-section")
+    )
+      .map(section => {
+        return {
+          [section.getElementsByTagName("h3")[0].innerText]: Array.from(
+            section.querySelectorAll(".item:not(.slick-cloned)")
+          ).map(item => {
+            return {
+              name: item.querySelector(".op-weapon-name").innerText,
+              image: item.querySelector("img").src,
+              type: item.querySelector(".op-weapon-type").innerText || undefined
+            };
+          })
+        };
+      })
+      .reduce((a, b) => Object.assign(a, b), {});
+    const ability = loadout.GADGET.pop();
+    const bio = document
+      .querySelector(".operator-bio-desc")
+      .innerText.split("\n")
+      .filter(l => l !== "")
+      .reduce(
+        (joined, current) => {
+          if (current === current.toUpperCase()) {
+            joined[1] = current;
+          } else {
+            joined[0][joined[1]] = current;
+          }
+          return joined;
+        },
+        [{}, "QUOTE"]
+      )[0];
+    return [
+      id,
+      {
+        roles,
+        armor,
+        speed,
+        ability,
+        brief,
+        loadout,
+        bio
+      }
+    ];
+  },
+  5: nameToId => {
+    const getStat = s => {
+      return parseInt(
+        Array.from(document.querySelector(`.op-rating-${s}`).classList)
+          .filter(c => c.startsWith("rating-rank-"))[0]
+          .replace("rating-rank-", "")
+      );
+    };
+
+    const name = document.querySelector(".operator-overview-side h3").innerText;
+    const id = nameToId[name.toLowerCase()];
+    const armor = getStat("armor");
+    const speed = getStat("speed");
+    const ability = document.querySelector(".operator-gadget span").innerText;
+
+    const bio = Array.from(document.querySelectorAll(".operator-bio li"))
+      .map(el => {
+        return {
+          [el.innerText.split(":")[0]]: el.querySelector("span").innerText
+        };
+      })
+      .concat([
+        {
+          BACKGROUND: document.querySelector(".operator-bio p").innerText.trim()
+        }
+      ])
+      .reduce((a, b) => Object.assign(a, b), {});
+
+    return [
+      id,
+      {
+        armor,
+        speed,
+        bio,
+        ability
+      }
+    ];
+  }
+};
+
+// TODO: need to download the images it finds
+
+// determine which layout function is needed
+const determineOperatorLayout = () => {
+  if (document.getElementsByClassName("gadget-pt").length > 0) {
+    return 2;
+  } else if (document.getElementById("tab-op-identity")) {
+    return 1;
+  } else if (document.getElementsByClassName("slick-slide").length > 0) {
+    return 4;
+  } else if (document.getElementsByClassName("operator-bio-desc").length > 0) {
+    return 3;
+  } else if (document.getElementsByClassName('op-rating-armor').length > 0) {
+    return 5;
+  } else {
+    return 0; // unknown layout
+  }
+};
+
 // table that supports markdown and ascii exports
 const table = ({ title, heading, rows }) => {
   return {
@@ -545,26 +897,6 @@ const getMarkdown = requestDetails => {
 // get the ascii version of detailed
 const getAscii = requestDetails => {
   return requestDetails.map(t => t.ascii).join("\n");
-};
-
-// update the api request object to include response json and headers
-const addApiResponse = async o => {
-  const { url, headers } = o;
-  const res = await fetch(url, new fetch.Headers(headers));
-  const response = await res.json();
-  const responseHeaders = res.headers;
-
-  console.log({
-    ...o,
-    response,
-    responseHeaders
-  });
-
-  return {
-    ...o,
-    response,
-    responseHeaders
-  };
 };
 
 const batch = async (arr, f, n) => {
@@ -641,10 +973,6 @@ const getDisplayPosition = op => {
     16
   );
 };
-
-// make a url a valid filename
-const cleanUrl = url =>
-  url.replace(/([\/])/g, "___").replace(/([\\<>:"|?*])/g, "");
 
 // limit the length of a string
 const limit = (str, n) => {
