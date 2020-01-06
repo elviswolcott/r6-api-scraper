@@ -114,7 +114,7 @@ const DEBUG = true;
       inputs["RememberMe"].checked = true;
 
       let buttons = document.getElementsByTagName("button");
-      buttons["LogInButton"].click();
+      Array.from(buttons).filter(el => el.innerText === "LOG IN")[0].click();
     },
     { UBI_EMAIL, UBI_PASSWORD }
   );
