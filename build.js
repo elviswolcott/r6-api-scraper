@@ -41,9 +41,9 @@ const DEBUG = true;
         url,
         headers: mapObject(request.headers(), (value, header) =>
           header === "authorization"
-            ? header.startsWith("Basic")
+            ? (!value.startsWith("Basic")
               ? value.replace(/=([A-Za-z0-9-._]+)/, "={AUTH_TOKEN}")
-              : "Basic {AUTH_TOKEN}"
+              : "Basic {AUTH_TOKEN}")
             : value
         ),
         response: json,
@@ -469,7 +469,7 @@ const DEBUG = true;
               return query;
             }, {})
           : undefined,
-        headers: { ...headers, authorization: "Basic {Token}" },
+        headers,
         response,
         responseHeaders
       };
