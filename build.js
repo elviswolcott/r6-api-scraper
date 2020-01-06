@@ -113,6 +113,11 @@ const DEBUG = true;
       inputs["AuthPassword"].value = UBI_PASSWORD;
       inputs["RememberMe"].checked = true;
 
+      // need to touch the inputs so that they update the UI framework
+      let touch = new Event('input');
+      inputs["AuthEmail"].dispatchEvent(touch);
+      inputs["AuthPassword"].dispatchEvent(touch);
+
       let buttons = document.getElementsByTagName("button");
       Array.from(buttons).filter(el => el.innerText === "LOG IN")[0].click();
     },
