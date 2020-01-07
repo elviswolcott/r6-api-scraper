@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "prettier build.js --write",
-    "scrape": "npm cache clean --force && node build.js"
+    "scrape": "node build.js"
   },
   "author": "Elvis Wolcott",
   "license": "ISC",
