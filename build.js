@@ -70,6 +70,8 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
         console.log(`Added ${url} to manifest list.`);
         manifests.push(url);
       }
+    } else if (request.resourceType() === "image") {
+      request.abort();
     }
     request.continue();
   });
@@ -146,7 +148,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
 
   debug("waiting for stats to load");
-  await page.waitForNavigation({ timeout: 3e5, waitUntil: "load" });
+  await page.waitForNavigation({ timeout: 1e5, waitUntil: "load" });
 
   // search for SEARCH_TERM to record API response
   debug("capturing search request");
