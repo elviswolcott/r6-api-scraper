@@ -1,5 +1,5 @@
 const chromium = require('chrome-aws-lambda')
-var puppeteer = require('puppeteer-core')
+var puppeteer
 const fs = require("fs-extra");
 const path = require("path");
 const fetch = require("node-fetch");

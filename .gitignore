@@ -14,3 +14,5 @@ manifest.json
 docs/auto
 # account information
 .env
+# Local Netlify folder
+.netlify
