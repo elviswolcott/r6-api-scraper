@@ -1,4 +1,5 @@
-const puppeteer = require("puppeteer");
+const chromium = require('chrome-aws-lambda')
+var puppeteer = require('puppeteer-core')
 const fs = require("fs-extra");
 const path = require("path");
 const fetch = require("node-fetch");
@@ -21,10 +22,24 @@ const DEBUG = true;
   fs.removeSync("./log");
   fs.mkdirSync("./log");
 
-  const browser = await puppeteer.launch({ headless: !DEBUG, args: [
-    '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process'
-  ] });
+  var options = {};
+  if (process.platform !== "win32") {
+    // hopefully this will work on Netlify?!
+    puppeteer = require('puppeteer-core');
+    let executablePath = await chromium.executablePath;
+    options = { headless: !DEBUG || chromium.headless, executablePath, args: [
+      '--disable-web-security',
+      '--disable-features=IsolateOrigins,site-per-process'
+    ].concat(chromium.args) };
+  } else {
+    puppeteer = require('puppeteer')
+    options = { headless: !DEBUG,  args: [
+      '--disable-web-security',
+      '--disable-features=IsolateOrigins,site-per-process'
+    ] };
+  }
+  
+  const browser = await puppeteer.launch(options);
   const page = await browser.newPage();
   page.setRequestInterception(true);
   page.on("response", async response => {
