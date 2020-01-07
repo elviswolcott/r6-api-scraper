@@ -128,7 +128,7 @@ const DEBUG = true;
     { UBI_EMAIL, UBI_PASSWORD }
   );
 
-  await page.waitForNavigation({ timeout: 1e5, waitUntil: "load" });
+  await page.waitForNavigation({ timeout: 3e5, waitUntil: "load" });
   await page.screenshot({ path: "log/stats.png", fullPage: true });
 
   // search for SEARCH_TERM to record API response
