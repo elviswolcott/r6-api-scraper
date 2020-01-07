@@ -76,7 +76,6 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   const startUrl = "https://game-rainbow6.ubi.com/en-us/home";
   debug(`opening ${startUrl}`);
   await page.goto(startUrl);
-  await page.screenshot({ path: "log/startup.png", fullPage: true });
 
   await sleep(5e2);
 
@@ -104,14 +103,12 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
       .filter(el => el.innerText === "LOG IN")[0]
       .click();
   });
-  await page.screenshot({ path: "log/login_popup.png", fullPage: true });
 
   // wait for load
   await waitFor(page, () => {
     return document.getElementsByTagName("button")["LogInButton"] !== undefined;
   });
   await sleep(1e3); // give the frame time to load and animate in
-  await page.screenshot({ path: "log/login.png", fullPage: true });
 
   const embedded_frames = await page.frames();
   const login_frame = embedded_frames.filter(frame =>
@@ -140,7 +137,6 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
 
   debug("waiting for stats to load");
   await page.waitForNavigation({ timeout: 3e5, waitUntil: "load" });
-  await page.screenshot({ path: "log/stats.png", fullPage: true });
 
   // search for SEARCH_TERM to record API response
   debug("capturing search request");
@@ -150,7 +146,6 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
       .getElementsByTagName("a")[0]
       .click();
   });
-  await page.screenshot({ path: "log/search-popup.png", fullPage: true });
 
   await page.evaluate(SEARCH_TERM => {
     const field = document.getElementsByTagName("input")[0];
