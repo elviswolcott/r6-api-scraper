@@ -22,10 +22,8 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   fs.removeSync("./log");
   fs.mkdirSync("./log");
 
-  console.log(process.env.CI || !DEBUG);
 
-
-  var options = { headless: process.env.CI || !DEBUG,  args: [
+  var options = { headless: process.env.CI || process.env.NETLIFY || !DEBUG,  args: [
     '--disable-web-security',
     '--disable-features=IsolateOrigins,site-per-process',
     '--no-sandbox'
