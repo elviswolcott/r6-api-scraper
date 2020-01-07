@@ -57,8 +57,6 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
         response: json,
         responseHeaders: response.headers()
       });
-    } else if (request.resourceType() === "image") {
-      debug(`Loaded ${url}`);
     }
   });
 
@@ -72,6 +70,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
       }
     } else if (request.resourceType() === "image") {
       request.abort();
+      return;
     }
     request.continue();
   });
