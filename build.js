@@ -7,9 +7,9 @@ const AsciiTable = require("ascii-table");
 const MarkdownTable = require("markdown-table");
 
 const SEARCH_TERM = "SEARCH";
-const { UBI_EMAIL, UBI_PASSWORD, UBI_ID } = process.env;
+const { UBI_EMAIL, UBI_PASSWORD, UBI_ID, DEBUG } = process.env;
 
-const DEBUG = true;
+const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
 
 (async () => {
   // scraped information
@@ -18,18 +18,24 @@ const DEBUG = true;
   let version = "unknown";
   const toDownload = [];
 
+  debug("cleaning up old log files");
   fs.removeSync("./log");
   fs.mkdirSync("./log");
 
+  console.log(process.env.CI || !DEBUG);
 
-  var options = { headless: !DEBUG || process.env.CI,  args: [
+
+  var options = { headless: process.env.CI || !DEBUG,  args: [
     '--disable-web-security',
     '--disable-features=IsolateOrigins,site-per-process',
     '--no-sandbox'
   ] };
   
+  debug("launching browser");
   const browser = await puppeteer.launch(options);
   const page = await browser.newPage();
+
+  debug("adding request interception");
   page.setRequestInterception(true);
   page.on("response", async response => {
     const request = response.request();
@@ -55,6 +61,7 @@ const DEBUG = true;
       });
     }
   });
+
   page.on("request", request => {
     const url = request.url();
     if (request.resourceType() === "xhr") {
@@ -66,8 +73,10 @@ const DEBUG = true;
     }
     request.continue();
   });
-  const startUrl = "https://game-rainbow6.ubi.com/en-us/home";
 
+
+  const startUrl = "https://game-rainbow6.ubi.com/en-us/home";
+  debug(`opening ${startUrl}`);
   await page.goto(startUrl);
   await page.screenshot({ path: "log/startup.png", fullPage: true });
 
@@ -80,6 +89,8 @@ const DEBUG = true;
       )[0] !== undefined
     );
   });
+
+  debug("checking site version");
   // get the version (not a very reliable method, OK if it doesn't work)
   version = await page.evaluate(() => {
     const footer = document
@@ -88,6 +99,8 @@ const DEBUG = true;
     return footer[footer.length - 1];
   });
   version && console.log(`Identified version as ${version}`);
+
+  debug("starting login");
   await page.evaluate(() => {
     Array.from(document.getElementsByTagName("button"))
       .filter(el => el.innerText === "LOG IN")[0]
@@ -107,9 +120,8 @@ const DEBUG = true;
     frame.url().startsWith("https://connect.ubisoft.com/login")
   )[0];
 
-  embedded_frames.forEach(frame => console.log(frame.url()))
-
   // login
+  debug("entering credentials");
   await login_frame.evaluate(
     ({ UBI_EMAIL, UBI_PASSWORD }) => {
       let inputs = document.getElementsByTagName("input");
@@ -128,10 +140,12 @@ const DEBUG = true;
     { UBI_EMAIL, UBI_PASSWORD }
   );
 
+  debug("waiting for stats to load");
   await page.waitForNavigation({ timeout: 3e5, waitUntil: "load" });
   await page.screenshot({ path: "log/stats.png", fullPage: true });
 
   // search for SEARCH_TERM to record API response
+  debug("capturing search request");
   await page.evaluate(() => {
     document
       .getElementsByClassName("search")[0]
@@ -149,6 +163,7 @@ const DEBUG = true;
   await sleep(5e3);
 
   // load in the manifests
+  debug("building manifest");
   const manifestContent = await reduceToObjectAsync(manifests, async path => {
     const u = path.split("/");
     return [
@@ -158,6 +173,7 @@ const DEBUG = true;
   });
 
   // localize
+  debug("localizing manifest");
   const localized = mapObject(
     manifestContent,
     localize(manifestContent.locale)
@@ -175,6 +191,7 @@ const DEBUG = true;
   // and different pages follow different formats
 
   // start with Ash as a known operator
+  debug("scraping operator bio pages")
   await page.goto(
     "https://rainbow6.ubisoft.com/siege/en-us/game-info/operators/ash/index.aspx"
   );
@@ -201,8 +218,7 @@ const DEBUG = true;
     async url => {
       await page.goto(url);
 
-      console.log(url);
-      console.log(await page.evaluate(determineOperatorLayout));
+      console.log(`Scraping ${url}`);
 
       return await page.evaluate(
         operatorLayouts[await page.evaluate(determineOperatorLayout)],
@@ -212,9 +228,11 @@ const DEBUG = true;
   );
 
   fs.writeFileSync("./temp", JSON.stringify(extraOperatorInfo));
+  debug("closing browser");
   await browser.close();
 
   // get operators as array
+  debug("cleaning up manifest");
   const inDisplayOrder = unKey(localized.operators).sort(
     (op1, op2) => getDisplayPosition(op1) - getDisplayPosition(op2)
   );
@@ -330,10 +348,13 @@ const DEBUG = true;
   manifest.allDivisions = Object.keys(manifest.divisions);
   fs.removeSync("./dist");
   fs.mkdirSync("./dist");
+  debug("saving manifest to disk");
   fs.writeFileSync("./dist/manifest.json", JSON.stringify(manifest));
   fs.removeSync("./dist/assets");
   fs.mkdirSync("./dist/assets");
+
   // download all the assets
+  debug("downloading assets");
   await batch(
     toDownload,
     downloadAs({
@@ -348,6 +369,7 @@ const DEBUG = true;
 
   // auto gen docs for the manifest
   // operators
+  debug("generating docs content")
   fs.writeFileSync(
     "./docs/auto/operators.md",
     [
