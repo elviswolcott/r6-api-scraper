@@ -57,6 +57,8 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
         response: json,
         responseHeaders: response.headers()
       });
+    } else if (request.resourceType() === "image") {
+      debug(`Loaded ${url}`);
     }
   });
 
