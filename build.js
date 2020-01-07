@@ -108,12 +108,20 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   await waitFor(page, () => {
     return document.getElementsByTagName("button")["LogInButton"] !== undefined;
   });
-  await sleep(1e3); // give the frame time to load and animate in
+  await sleep(5e3); // give the frame time to load and animate in
 
   const embedded_frames = await page.frames();
   const login_frame = embedded_frames.filter(frame =>
     frame.url().startsWith("https://connect.ubisoft.com/login")
   )[0];
+
+  await waitFor(login_frame, () => {
+    return (
+      Array.from(document.getElementsByTagName("button")).filter(
+        el => el.innerText === "LOG IN"
+      )[0] !== undefined
+    );
+  });
 
   // login
   debug("entering credentials");
