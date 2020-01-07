@@ -22,7 +22,7 @@ const DEBUG = true;
   fs.mkdirSync("./log");
 
 
-  var options = { headless: !DEBUG,  args: [
+  var options = { headless: !DEBUG || process.env.CI,  args: [
     '--disable-web-security',
     '--disable-features=IsolateOrigins,site-per-process',
     '--no-sandbox'
