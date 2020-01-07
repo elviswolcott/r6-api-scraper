@@ -24,7 +24,8 @@ const DEBUG = true;
 
   var options = { headless: !DEBUG,  args: [
     '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process'
+    '--disable-features=IsolateOrigins,site-per-process',
+    '--no-sandbox'
   ] };
   
   const browser = await puppeteer.launch(options);
