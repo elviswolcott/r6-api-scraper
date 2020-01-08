@@ -1,5 +1,15 @@
 /* your custom css */
 
+:root {
+  --ifm-color-primary: #fca103;
+  --ifm-color-primary-dark: #e39103;
+  --ifm-color-primary-darker: #d68903;
+  --ifm-color-primary-darkest: #b07102;
+  --ifm-color-primary-light: #fcaa1c;
+  --ifm-color-primary-lighter: #fcaf29;
+  --ifm-color-primary-lightest: #fdbd4f;
+}
+
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 
