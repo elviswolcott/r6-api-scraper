@@ -19,3 +19,6 @@ auto
 .netlify
 # editor settings
 .vscode
+# temporary files
+temp
+.temp
