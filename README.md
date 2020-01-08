@@ -5,7 +5,7 @@ Using Puppeteer, the scraper pulls definition files from Ubisoft's site, records
 
 This data is combined into the manifest. The manifest and recorded requests are used to generate markdown files for building the docs.
 
-Docusaurus uses these files to build the [final website](https://r6.elviswolcott.com).
+Docusaurus uses the generated files to build the [final website](https://r6.elviswolcott.com).
 
 
 A Zapier task runs each day to rebuild the site to pull the latest data.
