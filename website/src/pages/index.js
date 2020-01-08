@@ -1,6 +1,6 @@
 import React from 'react';
 import Layout from '@theme/Layout';
-function Hello() {
+function Landing() {
   return (
     <Layout title="Unofficial Rainbow Six API Docs">
       <div
@@ -18,4 +18,4 @@ function Hello() {
     </Layout>
   );
 }
-export default Hello;
+export default Landing;
