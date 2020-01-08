@@ -11,7 +11,8 @@ build
 # generated assets
 website/static/img/assets
 manifest.json
-docs/auto
+auto
+.docusaurus
 # account information
 .env
 # Local Netlify folder

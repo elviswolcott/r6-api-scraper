@@ -369,13 +369,14 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
   console.log(`Downloaded ${toDownload.length} items.`);
 
-  fs.mkdirpSync("./docs/auto");
+  const docsPath = "./website/docs/auto";
+  fs.mkdirpSync(docsPath);
 
   // auto gen docs for the manifest
   // operators
   debug("generating docs content")
   fs.writeFileSync(
-    "./docs/auto/operators.md",
+    `${docsPath}/operators.md`,
     [
       "---\nid: operators\ntitle: Operators\nsidebar_label: Operators\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allOperators
@@ -399,7 +400,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
   // seasons
   fs.writeFileSync(
-    "./docs/auto/seasons.md",
+    `${docsPath}/seasons.md`,
     [
       "---\nid: seasons\ntitle: Seasons\nsidebar_label: Seasons\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allSeasons
@@ -417,7 +418,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
   // divisions
   fs.writeFileSync(
-    "./docs/auto/divisions.md",
+    `${docsPath}/divisions.md`,
     [
       "---\nid: divisions\ntitle: Divisions\nsidebar_label: Divisions\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allDivisions
@@ -442,7 +443,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
   // ranks
   fs.writeFileSync(
-    "./docs/auto/ranks.md",
+    `${docsPath}/ranks.md`,
     [
       "---\nid: ranks\ntitle: Ranks\nsidebar_label: Ranks\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allRanks
@@ -593,13 +594,13 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   } catch (e) {}
 
   fs.writeFileSync(
-    "./docs/auto/requests.txt",
+    `${docsPath}/requests.txt`,
     ["API Format", requests.ascii, detailed.map(getAscii).join("\n\n")].join(
       "\n\n"
     )
   );
   fs.writeFileSync(
-    "./docs/auto/requests.md",
+    `${docsPath}/requests.md`,
     [
       "---\nid: requests\ntitle: Sample API Requests\nsidebar_label: Sample Requests\n---",
       "# API Format\nThis page is generated automatically by the API scraper.",
