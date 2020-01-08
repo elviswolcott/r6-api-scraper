@@ -17,3 +17,5 @@ auto
 .env
 # Local Netlify folder
 .netlify
+# editor settings
+.vscode
