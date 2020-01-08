@@ -1,20 +1,32 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/d5aff6c9-ea09-4d75-98b7-4c40ccc0c592/deploy-status)](https://app.netlify.com/sites/jovial-hopper-4c504c/deploys)
-# R6 API Scraper
+# Rainbow Six Siege API
 
-Using Puppeteer, the scraper pulls definition files from Ubisoft's site, records API requests, and scrapes pages for additional information. After scraping, all the referenced assets are downloaded.
+To learn more about the Rainbow Six Siege API, [read the docs](https://r6.elviswolcott.com/docs).
 
-This data is combined into the manifest. The manifest and recorded requests are used to generate markdown files for building the docs.
+# Repository Structure
 
-Docusaurus uses the generated files to build the [final website](https://r6.elviswolcott.com).
+## SDK
 
+The source for the SDK can be found in the `lib` directory. It's fairly simple, and a full explanation can be found in the docs.
 
-A Zapier task runs each day to rebuild the site to pull the latest data.
+## Docs
 
-Contributions to add more documentation, examples etc. are welcome.
+The source for the docs site exists in the `website` directory. It is built daily on Netlify and deployed to [r6.elviswolcott.com](https://r6.elviswolcott.com).
 
-# TODO
+The docs content lives in `website/src/pages` as React components and in `website/docs` as Markdown. The site is built using [Docusaurus 2](https://github.com/facebook/docusaurus/) and configured in `website/docusaurus.config.js` and `website/sidebars.json`.
 
-* Release manifest to NPM
-* scrape https://rainbow6.ubisoft.com for more info and add to manifest
-* add api docs
-* create API SDK
+While most of the docs are written by hand, some pages are generated during the manfiest build process. They can be found in `website/docs/auto` AFTER running a build and **will not** be tracked in git.
+
+## Scraper
+
+The source for the scraper is in the `scraper` directory. Using puppeteer, it pulls information from various Ubisoft sites to build the manifest and associated documentation pages. It also pulls all of the image assets.
+
+Make sure to create `scraper/.env` with a `UBI_EMAIL`, `UBI_PASSWORD`, and `UBI_ID` for your account.
+
+The `UBI_ID` can be found by signing into `https://game-rainbow6.ubi.com` and will be in the URL in the form `https://game-rainbow6.ubi.com/en-us/{PLATFORM}/player-statistics/{UBI_ID}/multiplayer
+
+# Contributing
+
+Contributions are welcome! 
+
+Create an issue or open a PR to if there's something you want added to the docs or SDK.
