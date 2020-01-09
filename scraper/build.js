@@ -19,9 +19,10 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   const toDownload = [];
 
   debug("cleaning up old log files");
-  fs.removeSync("./log");
-  fs.mkdirSync("./log");
-
+  const websitePath = "../website"
+  const docsPath = `${websitePath}/docs/auto`;
+  const distPath = "./dist";
+  const assetsPath = `${distPath}/assets`
 
   var options = { headless: process.env.CI || process.env.NETLIFY || !DEBUG,  args: [
     '--disable-web-security',
@@ -231,7 +232,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
     }
   );
 
-  fs.writeFileSync("./temp", JSON.stringify(extraOperatorInfo));
+  fs.writeFileSync("./.temp", JSON.stringify(extraOperatorInfo));
   debug("closing browser");
   await browser.close();
 
@@ -350,26 +351,26 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   }
   manifest.allRanks = Object.keys(manifest.ranks);
   manifest.allDivisions = Object.keys(manifest.divisions);
-  fs.removeSync("./dist");
-  fs.mkdirSync("./dist");
+  fs.removeSync(distPath);
+  fs.mkdirSync(distPath);
   debug("saving manifest to disk");
-  fs.writeFileSync("./dist/manifest.json", JSON.stringify(manifest));
-  fs.removeSync("./dist/assets");
-  fs.mkdirSync("./dist/assets");
+  fs.writeFileSync(`${distPath}/manifest.json`, JSON.stringify(manifest));
+  fs.removeSync(assetsPath);
+  fs.mkdirSync(assetsPath);
 
   // download all the assets
   debug("downloading assets");
   await batch(
     toDownload,
     downloadAs({
-      localPath: "./dist/assets",
+      localPath: assetsPath,
       baseUrl: "https://game-rainbow6.ubi.com"
     }),
     50
   );
   console.log(`Downloaded ${toDownload.length} items.`);
 
-  const docsPath = "./website/docs/auto";
+  
   fs.mkdirpSync(docsPath);
 
   // auto gen docs for the manifest
@@ -470,7 +471,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
 
   // copy dist into website/static/img
-  fs.copySync("./dist", "./website/static/img");
+  fs.copySync(distPath, `${websitePath}/static/img`);
 
   // organize the intercepted requests to be easier to read
   apiRequests = unique(apiRequests)
@@ -519,10 +520,6 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
         return v;
       }
     });
-  const asJson = apiRequests.map(r => {
-    const { url, ...rest } = r;
-    return JSON.stringify(rest);
-  });
 
   const requests = table({
     title: "Request Details",
@@ -608,7 +605,6 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
       detailed.map(getMarkdown).join("\n\n")
     ].join("\n\n")
   );
-  fs.writeFileSync("./log/requests", apiRequests.map(r => r.url).join("\n"));
   console.log(`Recorded API requests.`);
 })();
 
