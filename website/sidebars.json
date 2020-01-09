@@ -1,10 +1,10 @@
 {
   "Manifest": {
-    "Manifest": ["manifest"],
-    "Explore": ["auto/operators", "auto/seasons", "auto/divisions", "auto/ranks"]
+    "Using the Manifest": ["manifest"],
+    "Manifest Explorer": ["auto/operators", "auto/seasons", "auto/divisions", "auto/ranks"]
 
   },
   "API": {
-    "API Format": ["auto/requests"]
+    "API Usage": ["usage"]
   }
 }

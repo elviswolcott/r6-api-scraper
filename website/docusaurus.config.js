@@ -31,7 +31,7 @@ const siteConfig = {
       },
       links: [
         {to: 'docs/manifest', label: 'Manifest', position: 'right'},
-        {to: 'docs/auto/requests', label: 'API', position: 'right'}
+        {to: 'docs/usage', label: 'API', position: 'right'}
       ],
     },
     prism: {
