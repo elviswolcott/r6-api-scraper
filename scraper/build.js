@@ -20,7 +20,8 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
 
   debug("cleaning up old log files");
   const websitePath = "../website"
-  const docsPath = `${websitePath}/docs/auto`;
+  const docsPath = `${websitePath}/docs/`;
+  const explorerPath = `${docsPath}/explorer`;
   const distPath = "./dist";
   const assetsPath = `${distPath}/assets`
 
@@ -372,12 +373,13 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
 
   
   fs.mkdirpSync(docsPath);
+  fs.mkdirpSync(explorerPath);
 
   // auto gen docs for the manifest
   // operators
-  debug("generating docs content")
+  debug("generating explorer content")
   fs.writeFileSync(
-    `${docsPath}/operators.md`,
+    `${explorerPath}/operators.md`,
     [
       "---\nid: operators\ntitle: Operators\nsidebar_label: Operators\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allOperators
@@ -401,7 +403,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
   // seasons
   fs.writeFileSync(
-    `${docsPath}/seasons.md`,
+    `${explorerPath}/seasons.md`,
     [
       "---\nid: seasons\ntitle: Seasons\nsidebar_label: Seasons\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allSeasons
@@ -419,7 +421,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
   // divisions
   fs.writeFileSync(
-    `${docsPath}/divisions.md`,
+    `${explorerPath}/divisions.md`,
     [
       "---\nid: divisions\ntitle: Divisions\nsidebar_label: Divisions\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allDivisions
@@ -444,7 +446,7 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   );
   // ranks
   fs.writeFileSync(
-    `${docsPath}/ranks.md`,
+    `${explorerPath}/ranks.md`,
     [
       "---\nid: ranks\ntitle: Ranks\nsidebar_label: Ranks\n---\n\n This page is automatically generated during the scraping process.",
       manifest.allRanks
@@ -591,15 +593,9 @@ const debug = DEBUG ? m => console.log(`DEBUG: ${m}`) : () => {};
   } catch (e) {}
 
   fs.writeFileSync(
-    `${docsPath}/requests.txt`,
-    ["API Format", requests.ascii, detailed.map(getAscii).join("\n\n")].join(
-      "\n\n"
-    )
-  );
-  fs.writeFileSync(
-    `${docsPath}/requests.md`,
+    `${docsPath}/api/samples.md`,
     [
-      "---\nid: requests\ntitle: Sample API Requests\nsidebar_label: Sample Requests\n---",
+      "---\nid: samples\ntitle: Sample API Requests\nsidebar_label: Sample Requests\n---",
       "# API Format\nThis page is generated automatically by the API scraper.",
       requests.md,
       detailed.map(getMarkdown).join("\n\n")

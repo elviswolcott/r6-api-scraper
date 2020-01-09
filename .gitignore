@@ -12,6 +12,8 @@ build
 website/static/img/assets
 manifest.json
 auto
+explorer
+samples.md
 .docusaurus
 # account information
 .env
