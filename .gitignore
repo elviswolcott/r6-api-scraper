@@ -17,3 +17,8 @@ auto
 .env
 # Local Netlify folder
 .netlify
+# editor settings
+.vscode
+# temporary files
+temp
+.temp
